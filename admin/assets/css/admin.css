@@ -1,0 +1,76 @@
+/* Admin Panel Styles */
+
+/* Common Admin Styles */
+.container {
+    padding-top: 20px;
+    padding-bottom: 20px;
+}
+
+/* Navigation Buttons */
+.btn-nav {
+    margin-right: 10px;
+}
+
+/* Card Styles */
+.card {
+    margin-bottom: 20px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.card-header {
+    padding: 15px;
+}
+
+.card-header h3 {
+    font-size: 1.5rem;
+}
+
+/* Table Styles */
+.table th {
+    background-color: #f8f9fa;
+}
+
+.table td {
+    vertical-align: middle;
+}
+
+/* Alert Styles */
+.alert {
+    margin-bottom: 20px;
+}
+
+/* Button Styles */
+.btn-action {
+    min-width: 100px;
+}
+
+/* Icon Spacing */
+.fas {
+    margin-right: 5px;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f4f4f9;
+    margin: 0;
+    padding: 0;
+}
+
+header {
+    background-color: #333;
+    color: #fff;
+    padding: 10px 20px;
+    text-align: center;
+}
+
+button {
+    background-color: #007bff;
+    color: #fff;
+    border: none;
+    padding: 10px 15px;
+    cursor: pointer;
+}
+
+button:hover {
+    background-color: #0056b3;
+}

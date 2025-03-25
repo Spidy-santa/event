@@ -1,0 +1,8 @@
+{
+    "require": {
+        "endroid/qr-code": "^6.0",
+        "stripe/stripe-php": "^16.6",
+        "google/apiclient": "*",
+        "phpmailer/phpmailer": "*"
+    }
+}
