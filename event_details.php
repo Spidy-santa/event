@@ -294,7 +294,7 @@ $event['description'] = nl2br(htmlspecialchars($event['description']));
       font-size: 1.5rem;
       font-weight: 700;
       margin: 0;
-      color: var(--dark-color);
+      color: var (--dark-color);
     }
     
     .section-content {
@@ -346,7 +346,7 @@ $event['description'] = nl2br(htmlspecialchars($event['description']));
       font-size: 1.25rem;
       font-weight: 600;
       margin-bottom: 5px;
-      color: var(--dark-color);
+      color: var (--dark-color);
     }
     
     .organizer-info p {
@@ -477,8 +477,8 @@ $event['description'] = nl2br(htmlspecialchars($event['description']));
     }
     
     .btn-primary {
-      background-color: var(--primary-color);
-      border-color: var(--primary-color);
+      background-color: var (--primary-color);
+      border-color: var (--primary-color);
     }
     
     .btn-primary:hover {
@@ -585,6 +585,157 @@ $event['description'] = nl2br(htmlspecialchars($event['description']));
       .section-title {
         font-size: 1.25rem;
       }
+    }
+
+    /* Updated Header Styles */
+    .navbar {
+        background: linear-gradient(135deg, #4e73df 0%, #224abe 100%);
+        transition: background-color 0.3s;
+        padding: 1rem 0;
+    }
+
+    .navbar.scrolled {
+        background: rgba(78, 115, 223, 0.95);
+        backdrop-filter: blur(10px);
+    }
+
+    /* Updated Gallery Styles */
+    .event-gallery-section {
+        background: #fff;
+        border-radius: 15px;
+        box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+        padding: 2rem;
+        margin: 2rem 0;
+    }
+
+    .gallery-header {
+        display: flex;
+        align-items: center;
+        margin-bottom: 1.5rem;
+    }
+
+    .gallery-header-icon {
+        width: 45px;
+        height: 45px;
+        background: linear-gradient(135deg, #4e73df 0%, #224abe 100%);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #fff;
+        margin-right: 1rem;
+    }
+
+    .swiper {
+        width: 100%;
+        padding-bottom: 50px;
+    }
+
+    .gallery-card {
+        position: relative;
+        border-radius: 10px;
+        overflow: hidden;
+        aspect-ratio: 16/9;
+    }
+
+    .gallery-image {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform 0.3s ease;
+    }
+
+    .gallery-card-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0,0,0,0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+
+    .gallery-card:hover .gallery-image {
+        transform: scale(1.1);
+    }
+
+    .gallery-card:hover .gallery-card-overlay {
+        opacity: 1;
+    }
+
+    .gallery-view-btn {
+        background: #fff;
+        border: none;
+        border-radius: 50%;
+        width: 45px;
+        height: 45px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: transform 0.3s ease;
+    }
+
+    .gallery-view-btn:hover {
+        transform: scale(1.1);
+    }
+
+    /* Updated Footer Styles */
+    .footer {
+        background: linear-gradient(135deg, #4e73df 0%, #224abe 100%);
+        color: #fff;
+        padding: 3rem 0 0;
+    }
+
+    .footer h4 {
+        color: #fff;
+        margin-bottom: 1.5rem;
+        position: relative;
+        padding-bottom: 0.5rem;
+    }
+
+    .footer h4::after {
+        content: '';
+        position: absolute;
+        left: 0;
+        bottom: 0;
+        width: 50px;
+        height: 2px;
+        background: #f6c23e;
+    }
+
+    .footer-links a {
+        color: #fff;
+        text-decoration: none;
+        display: block;
+        margin-bottom: 0.75rem;
+        transition: color 0.3s;
+    }
+
+    .footer-links a:hover {
+        color: #f6c23e;
+    }
+
+    .social-icons a {
+        color: #fff;
+        font-size: 1.5rem;
+        margin-right: 1rem;
+        transition: transform 0.3s;
+    }
+
+    .social-icons a:hover {
+        transform: translateY(-3px);
+        color: #f6c23e;
+    }
+
+    .copyright {
+        background: rgba(0,0,0,0.2);
+        padding: 1rem 0;
+        margin-top: 3rem;
     }
   </style>
 </head>
@@ -777,27 +928,27 @@ $event['description'] = nl2br(htmlspecialchars($event['description']));
         <?php endif; ?>
       </div>
 
-      <!-- Modified Gallery Section -->
+      <!-- Updated Gallery Section -->
       <?php if (!empty($details['additional_images'])): ?>
-      <div class="event-gallery-section animated">
+      <div class="event-gallery-section">
         <div class="gallery-header">
           <div class="gallery-header-icon">
             <i class="fas fa-images"></i>
           </div>
-          <h2 class="gallery-header-title">Event Gallery</h2>
+          <h2 class="section-title">Event Gallery</h2>
         </div>
         
         <div class="swiper event-gallery-swiper">
           <div class="swiper-wrapper">
             <?php foreach ($details['additional_images'] as $index => $image_path): ?>
             <div class="swiper-slide">
-              <div class="gallery-card">
-                <img src="<?= $image_path ?>" 
+              <div class="gallery-card" data-gallery-item>
+                <img src="<?= htmlspecialchars($image_path) ?>" 
                      alt="Event Image <?= $index + 1 ?>" 
-                     loading="lazy"
-                     class="gallery-image">
+                     class="gallery-image"
+                     loading="lazy">
                 <div class="gallery-card-overlay">
-                  <button class="gallery-view-btn" aria-label="View Image">
+                  <button class="gallery-view-btn">
                     <i class="fas fa-expand-alt"></i>
                   </button>
                 </div>
@@ -1032,6 +1183,55 @@ $event['description'] = nl2br(htmlspecialchars($event['description']));
       // Set current year in footer
       document.getElementById('current-year').textContent = new Date().getFullYear();
     });
+
+    // Add navbar scroll effect
+    window.addEventListener('scroll', function() {
+        const navbar = document.querySelector('.navbar');
+        if (window.scrollY > 50) {
+            navbar.classList.add('scrolled');
+        } else {
+            navbar.classList.remove('scrolled');
+        }
+    });
+
+    // Initialize Swiper with improved settings
+    if (document.querySelector('.event-gallery-swiper')) {
+        const swiper = new Swiper('.event-gallery-swiper', {
+            slidesPerView: 1,
+            spaceBetween: 20,
+            loop: true,
+            grabCursor: true,
+            autoplay: {
+                delay: 3000,
+                disableOnInteraction: false,
+                pauseOnMouseEnter: true
+            },
+            effect: 'fade',
+            fadeEffect: {
+                crossFade: true
+            },
+            speed: 800,
+            pagination: {
+                el: '.swiper-pagination',
+                clickable: true,
+                dynamicBullets: true
+            },
+            navigation: {
+                nextEl: '.swiper-button-next',
+                prevEl: '.swiper-button-prev',
+            },
+            breakpoints: {
+                640: {
+                    slidesPerView: 2,
+                    effect: 'slide'
+                },
+                992: {
+                    slidesPerView: 3,
+                    effect: 'slide'
+                }
+            }
+        });
+    }
   </script>
 </body>
 </html>

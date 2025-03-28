@@ -15,9 +15,36 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
         switch ($_POST['action']) {
             case 'delete':
-                $stmt = $pdo->prepare("DELETE FROM users WHERE user_id = ?");
-                $stmt->execute([$user_id]);
-                $_SESSION['success'] = "User deleted successfully.";
+                try {
+                    $pdo->beginTransaction();
+                    
+                    // Check if user exists and is not an admin
+                    $stmt = $pdo->prepare("SELECT * FROM users WHERE user_id = ?");
+                    $stmt->execute([$user_id]);
+                    $userToDelete = $stmt->fetch();
+                    
+                    if (!$userToDelete || $userToDelete['role'] === 'admin') {
+                        throw new Exception("Cannot delete this user");
+                    }
+                    
+                    // Delete user's registrations
+                    $stmt = $pdo->prepare("DELETE FROM event_registrations WHERE user_id = ?");
+                    $stmt->execute([$user_id]);
+                    
+                    // Delete events created by this user
+                    $stmt = $pdo->prepare("DELETE FROM events WHERE organizer_id = ?");
+                    $stmt->execute([$user_id]);
+                    
+                    // Delete the user
+                    $stmt = $pdo->prepare("DELETE FROM users WHERE user_id = ?");
+                    $stmt->execute([$user_id]);
+                    
+                    $pdo->commit();
+                    $_SESSION['success'] = "User and all related data deleted successfully.";
+                } catch (Exception $e) {
+                    $pdo->rollBack();
+                    $_SESSION['error'] = "Error deleting user: " . $e->getMessage();
+                }
                 break;
                 
             case 'change_role':
@@ -40,7 +67,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 // Fetch all users
-$stmt = $pdo->query("SELECT * FROM users ORDER BY role, name");
+$stmt = $pdo->query("SELECT *, COALESCE(is_active, 0) as is_active FROM users ORDER BY role, name");
 $users = $stmt->fetchAll();
 ?>
 <!DOCTYPE html>
@@ -128,6 +155,9 @@ $users = $stmt->fetchAll();
                 <?php if (isset($_SESSION['success'])): ?>
                     <div class="alert alert-success"><?= $_SESSION['success']; unset($_SESSION['success']); ?></div>
                 <?php endif; ?>
+                <?php if (isset($_SESSION['error'])): ?>
+                    <div class="alert alert-danger"><?= $_SESSION['error']; unset($_SESSION['error']); ?></div>
+                <?php endif; ?>
 
                 <div class="card">
                     <div class="card-header bg-dark text-white">
@@ -156,8 +186,8 @@ $users = $stmt->fetchAll();
                                                 </span>
                                             </td>
                                             <td>
-                                                <span class="badge bg-<?= $user['is_active'] ? 'success' : 'warning' ?>">
-                                                    <?= $user['is_active'] ? 'Active' : 'Inactive' ?>
+                                                <span class="badge bg-<?= isset($user['is_active']) && $user['is_active'] ? 'success' : 'warning' ?>">
+                                                    <?= isset($user['is_active']) && $user['is_active'] ? 'Active' : 'Inactive' ?>
                                                 </span>
                                             </td>
                                             <td>
@@ -189,7 +219,7 @@ $users = $stmt->fetchAll();
                                                                 </form>
                                                             </li>
                                                             <li>
-                                                                <form method="POST" class="dropdown-item" onsubmit="return confirm('Are you sure you want to delete this user?');">
+                                                                <form method="POST" class="dropdown-item" onsubmit="return confirmUserDelete('<?= htmlspecialchars($user['name']) ?>');">
                                                                     <input type="hidden" name="user_id" value="<?= $user['user_id'] ?>">
                                                                     <input type="hidden" name="action" value="delete">
                                                                     <button type="submit" class="btn btn-link p-0 text-decoration-none text-danger">
@@ -216,5 +246,10 @@ $users = $stmt->fetchAll();
     <button>Delete User</button>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="assets/js/admin.js"></script>
+    <script>
+        function confirmUserDelete(userName) {
+            return confirm(`Are you sure you want to delete ${userName}?`);
+        }
+    </script>
 </body>
 </html>

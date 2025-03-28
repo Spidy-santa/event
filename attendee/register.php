@@ -9,11 +9,25 @@
 session_start();
 include '../includes/db.php'; // Database connection
 
+use PHPMailer\PHPMailer\PHPMailer;
+use PHPMailer\PHPMailer\Exception;
+
+require '../vendor/autoload.php';
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $name = htmlspecialchars($_POST['name']);
     $email = filter_var($_POST['email'], FILTER_SANITIZE_EMAIL);
-    $password = password_hash($_POST['password'], PASSWORD_DEFAULT);
+    $password = $_POST['password']; // Temporary store for email
+    $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
     $role = $_POST['role'];
+    
+    // Validate role
+    if (!in_array($role, ['attendee', 'organizer'])) {
+        $_SESSION['error'] = "Invalid role selected!";
+        header("Location: register.php");
+        exit();
+    }
+    
     $is_approved = ($role === 'organizer') ? 0 : 1; // Organizers need approval
 
     // Check if email already exists
@@ -25,34 +39,55 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // Insert into database
         $stmt = $pdo->prepare("INSERT INTO users (name, email, password, role, is_approved) 
                               VALUES (?, ?, ?, ?, ?)");
-        if ($stmt->execute([$name, $email, $password, $role, $is_approved])) {
-            // Send confirmation email
-            $to = $email;
-            $subject = "Welcome to Event Management System";
-            $message = "
-            <html>
-            <head>
-                <title>Registration Successful</title>
-            </head>
-            <body>
-                <h2>Hello, $name!</h2>
-                <p>Thank you for registering on our platform.</p>
-                <p><strong>Your Login Details:</strong></p>
-                <p>Email: $email</p>
-                <p><i>Please keep these details secure.</i></p>
-                <p>Best Regards,<br>Event Management Team</p>
-            </body>
-            </html>
-            ";
-            $headers = "MIME-Version: 1.0" . "\r\n";
-            $headers .= "Content-type:text/html;charset=UTF-8" . "\r\n";
-            $headers .= "From: noreply@yourdomain.com" . "\r\n";
+        if ($stmt->execute([$name, $email, $hashedPassword, $role, $is_approved])) {
+            $mail = new PHPMailer(true);
 
-            if (mail($to, $subject, $message, $headers)) {
+            try {
+                // SMTP Configuration
+                $mail->isSMTP();
+                $mail->Host       = 'smtp.gmail.com';
+                $mail->SMTPAuth   = true;
+                $mail->Username   = 'eventforge777@gmail.com';
+                $mail->Password   = 'hxehhenwdtababfs';
+                $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
+                $mail->Port       = 587;
+
+                // Email setup
+                $mail->setFrom('eventforge777@gmail.com', 'Event Management Team');
+                $mail->addAddress($email, $name);
+                $mail->isHTML(true);
+                $mail->Subject = "Welcome to Event Management System";
+                $mail->Body = "
+                    <html>
+                    <head>
+                        <style>
+                            body { font-family: Arial, sans-serif; }
+                            .container { max-width: 600px; margin: 20px auto; padding: 20px; }
+                            .header { background: #007bff; color: #ffffff; padding: 15px; text-align: center; }
+                            .content { padding: 20px; }
+                            .footer { text-align: center; padding: 10px; }
+                        </style>
+                    </head>
+                    <body>
+                        <div class='container'>
+                            <div class='header'>Welcome to Event Management System 🎉</div>
+                            <div class='content'>
+                                <p>Hi <strong>$name</strong>,</p>
+                                <p>Thank you for registering! Your login credentials:</p>
+                                <p><strong>Email:</strong> $email</p>
+                                <p><strong>Password:</strong> $password</p>
+                            </div>
+                            <div class='footer'>&copy; " . date('Y') . " Event Management System</div>
+                        </div>
+                    </body>
+                    </html>";
+
+                $mail->send();
                 $_SESSION['success'] = "Registration successful! Login details sent to your email.";
-            } else {
-                $_SESSION['error'] = "Registration successful, but email sending failed.";
+            } catch (Exception $e) {
+                $_SESSION['error'] = "Registration successful, but email could not be sent.";
             }
+            
             header("Location: login.php");
             exit();
         } else {
@@ -90,9 +125,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <div class="mb-3">
             <label class="form-label">Role</label>
             <select class="form-control" name="role" required>
+                
                 <option value="attendee">Attendee</option>
-                <option value="organizer">Organizer</option>
+                <option value="organizer">Event Organizer</option>
             </select>
+            <small class="form-text text-muted">
+                Note: Organizer accounts require admin approval before activation.
+            </small>
         </div>
         <button type="submit" class="btn btn-primary">Register</button>
     </form>

@@ -2,109 +2,113 @@
 session_start();
 include '../includes/db.php';
 
-// Check if user is admin
+// Enhance security checks
 if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
-    header("Location: login.php");
-    exit();
+    http_response_code(403);
+    exit('Unauthorized access');
 }
 
-if (!isset($_POST['user_id'])) {
-    http_response_code(400);
-    echo "User ID is required";
-    exit();
-}
-
-$user_id = $_POST['user_id'];
-$action = $_POST['action'] ?? 'approve';
-
-try {
-    if ($action === 'approve') {
-        // First check if user exists and is not already approved
-        $stmt = $pdo->prepare("SELECT * FROM users WHERE user_id = ? AND role = 'organizer' AND is_approved = 0");
-        $stmt->execute([$user_id]);
-        $user = $stmt->fetch();
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    try {
+        $pdo->beginTransaction();
         
-        if (!$user) {
-            throw new Exception('Invalid user or already approved');
+        $user_id = filter_input(INPUT_POST, 'user_id', FILTER_VALIDATE_INT);
+        $action = filter_input(INPUT_POST, 'action', FILTER_SANITIZE_STRING);
+
+        if (!$user_id || !$action) {
+            throw new Exception('Invalid input parameters');
         }
 
-        // Update user approval status
-        $stmt = $pdo->prepare("UPDATE users SET is_approved = 1 WHERE user_id = ?");
-        $result = $stmt->execute([$user_id]);
-        
-        if (!$result) {
-            throw new Exception('Failed to update user status');
+        // Verify user exists and is an organizer
+        $stmt = $pdo->prepare("SELECT * FROM users WHERE user_id = ? AND role = 'organizer'");
+        $stmt->execute([$user_id]);
+        $organizer = $stmt->fetch();
+
+        if (!$organizer) {
+            throw new Exception('Invalid organizer');
         }
 
-        // Send email with credentials
-        $to = $user['email'];
-        $subject = 'Your Organizer Account Has Been Approved';
-        $message = "Your organizer account has been approved.\n\n";
-        $message .= "You can now login using your registered email address.\n";
-        $message .= "Email: " . $user['email'] . "\n\n";
-        $message .= "Please use your existing password to login.";
-        $headers = 'From: noreply@eventmanagement.com';
+        switch ($action) {
+            case 'approve':
+                // Update approval status and send welcome email
+                $stmt = $pdo->prepare("UPDATE users SET is_approved = 1, is_active = 1 WHERE user_id = ?");
+                $result = $stmt->execute([$user_id]);
+                
+                // Send approval email
+                sendApprovalEmail($organizer['email'], $organizer['name']);
+                $response = ['status' => 'success', 'message' => 'Organizer approved successfully'];
+                break;
 
-        mail($to, $subject, $message, $headers);
-        
-        $_SESSION['success'] = "Organizer approved successfully.";
+            case 'reject':
+                // Store rejection reason if provided
+                $reason = filter_input(INPUT_POST, 'reason', FILTER_SANITIZE_STRING);
+                
+                // Delete the organizer account
+                $stmt = $pdo->prepare("DELETE FROM users WHERE user_id = ?");
+                $stmt->execute([$user_id]);
+                
+                // Send rejection email
+                sendRejectionEmail($organizer['email'], $organizer['name'], $reason);
+                $response = ['status' => 'success', 'message' => 'Organizer rejected'];
+                break;
 
-    } elseif ($action === 'reject') {
-        // Get user email before deletion
-        $stmt = $pdo->prepare("SELECT email FROM users WHERE user_id = ? AND role = 'organizer'");
-        $stmt->execute([$user_id]);
-        $user = $stmt->fetch();
-        
-        if (!$user) {
-            throw new Exception('User not found');
+            default:
+                throw new Exception('Invalid action');
         }
-        
-        // Delete the rejected organizer
-        $stmt = $pdo->prepare("DELETE FROM users WHERE user_id = ? AND role = 'organizer'");
-        $stmt->execute([$user_id]);
-        
-        // Send rejection email
-        $to = $user['email'];
-        $subject = 'Organizer Application Status';
-        $message = "We regret to inform you that your organizer application has been rejected.\n\n";
-        $message .= "If you have any questions, please contact our support team.";
-        $headers = 'From: noreply@eventmanagement.com';
-        
-        mail($to, $subject, $message, $headers);
-        
-        $_SESSION['success'] = "Organizer application rejected.";
 
-    } elseif ($action === 'remove') {
-        // Get user email before deletion
-        $stmt = $pdo->prepare("SELECT email FROM users WHERE user_id = ? AND role = 'organizer'");
-        $stmt->execute([$user_id]);
-        $user = $stmt->fetch();
+        $pdo->commit();
+        $_SESSION['success'] = $response['message'];
         
-        if (!$user) {
-            throw new Exception('User not found');
+        // Return JSON response for AJAX requests
+        if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && 
+            strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') {
+            header('Content-Type: application/json');
+            echo json_encode($response);
+            exit;
         }
+
+    } catch (Exception $e) {
+        $pdo->rollBack();
+        $_SESSION['error'] = $e->getMessage();
         
-        // Delete the organizer
-        $stmt = $pdo->prepare("DELETE FROM users WHERE user_id = ? AND role = 'organizer'");
-        $stmt->execute([$user_id]);
-        
-        // Send removal notification
-        $to = $user['email'];
-        $subject = 'Organizer Account Removed';
-        $message = "Your organizer account has been removed from our system.\n\n";
-        $message .= "If you believe this is an error, please contact our support team.";
-        $headers = 'From: noreply@eventmanagement.com';
-        
-        mail($to, $subject, $message, $headers);
-        
-        $_SESSION['success'] = "Organizer removed successfully.";
+        if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && 
+            strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') {
+            http_response_code(400);
+            echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
+            exit;
+        }
     }
-} catch (Exception $e) {
-    $_SESSION['error'] = $e->getMessage();
-} catch (PDOException $e) {
-    $_SESSION['error'] = "Database error: " . $e->getMessage();
+    
+    header('Location: manage_organizers.php');
+    exit;
 }
 
-header("Location: manage_organizers.php");
-exit();
+// Helper functions for emails
+function sendApprovalEmail($email, $name) {
+    $subject = "Organizer Account Approved";
+    $message = "Dear $name,\n\n"
+             . "Your organizer account has been approved! You can now:\n"
+             . "- Create and manage events\n"
+             . "- Access the organizer dashboard\n"
+             . "- View analytics for your events\n\n"
+             . "Login to your account to get started.\n\n"
+             . "Best regards,\nEvent Management Team";
+    
+    mail($email, $subject, $message, "From: noreply@eventmanagement.com");
+}
+
+function sendRejectionEmail($email, $name, $reason = '') {
+    $subject = "Organizer Application Status";
+    $message = "Dear $name,\n\n"
+             . "We regret to inform you that your organizer application was not approved.";
+    
+    if ($reason) {
+        $message .= "\n\nReason: $reason";
+    }
+    
+    $message .= "\n\nIf you have any questions, please contact our support team.\n\n"
+              . "Best regards,\nEvent Management Team";
+    
+    mail($email, $subject, $message, "From: noreply@eventmanagement.com");
+}
 ?>

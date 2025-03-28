@@ -2,11 +2,6 @@
 session_start();
 include '../includes/db.php';
 
-use PHPMailer\PHPMailer\PHPMailer;
-use PHPMailer\PHPMailer\Exception;
-
-require '../vendor/autoload.php';
-
 if (!isset($_SESSION['user_id'])) {
     header("Location: ../login.php");
     exit();
@@ -90,42 +85,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             throw new Exception('QR Code library not properly loaded');
         }
 
-        // After successful registration, before commit
-        // Get user email
-        $stmt = $pdo->prepare("SELECT email, name FROM users WHERE user_id = ?");
-        $stmt->execute([$user_id]);
-        $user = $stmt->fetch();
-
-        // Send confirmation email
-        try {
-            $mail = new PHPMailer(true);
-            $mail->isSMTP();
-            $mail->Host       = 'smtp.gmail.com';
-            $mail->SMTPAuth   = true;
-            $mail->Username   = 'eventforge777@gmail.com';
-            $mail->Password   = 'hxehhenwdtababfs';
-            $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
-            $mail->Port       = 587;
-
-            $mail->setFrom('eventforge777@gmail.com', 'Event Management Team');
-            $mail->addAddress($user['email'], $user['name']);
-            $mail->isHTML(true);
-            $mail->Subject = "Event Registration Confirmation - {$event['title']}";
-
-            // Email body with ticket details
-            $mail->Body = "
-                <h2>Registration Confirmation</h2>
-                <p>Dear {$user['name']},</p>
-                <p>Your registration for {$event['title']} is confirmed.</p>
-                <p>Total Amount: $${total}</p>
-                <p>Your QR code ticket is attached.</p>";
-
-            $mail->addAttachment($qr_code_path, 'event_ticket.png');
-            $mail->send();
-        } catch (Exception $e) {
-            // Log email error but continue with registration
-            error_log("Email sending failed: {$mail->ErrorInfo}");
-        }
+        // Save registration
+        $stmt = $pdo->prepare("INSERT INTO registrations (user_id, event_id, ticket_qty, total_amount, qr_code_path) 
+                            VALUES (?, ?, ?, ?, ?)");
+        $stmt->execute([$user_id, $event_id, array_sum(array_column($tickets, 'qty')), $total, $qr_code_path]);
 
         $pdo->commit();
         $_SESSION['success'] = "Registration successful!";

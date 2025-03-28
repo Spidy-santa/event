@@ -77,6 +77,29 @@ $featured_event = !empty($top_events) ? $top_events[0] : null;
     <link href="assets/css/styles.css" rel="stylesheet">
     <link href="assets/css/custom.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .footer {
+            background-color: #1a1a1a !important;
+        }
+        .footer-links li {
+            margin-bottom: 10px;
+        }
+        .footer-links a {
+            color: #fff;
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+        .footer-links a:hover {
+            color: #ffd700;
+        }
+        .social-links a {
+            color: #fff;
+            transition: color 0.3s;
+        }
+        .social-links a:hover {
+            color: #ffd700;
+        }
+    </style>
 </head>
 <body>
 
@@ -216,41 +239,45 @@ $featured_event = !empty($top_events) ? $top_events[0] : null;
     </div>
 
     <!-- Footer -->
-    <footer class="footer mt-5">
+    <footer class="footer bg-dark text-white py-4">
         <div class="container">
-            <div class="row">
-                <div class="col-md-4 mb-3">
-                    <h4>About EventForge</h4>
-                    <p>EventForge is your premier destination for discovering, organizing, and managing events of all types.</p>
-                    <div class="social-icons mt-2">
-                        <a href="#"><i class="fab fa-facebook"></i></a>
-                        <a href="#"><i class="fab fa-twitter"></i></a>
-                        <a href="#"><i class="fab fa-instagram"></i></a>
-                        <a href="#"><i class="fab fa-linkedin"></i></a>
+            <div class="row g-4">
+                <!-- Contact Info -->
+                <div class="col-md-4">
+                    <h5 class="mb-3">Contact Info</h5>
+                    <ul class="list-unstyled footer-links">
+                        <li><i class="fas fa-phone me-2"></i>+91 9345347835</li>
+                        <li><i class="fas fa-envelope me-2"></i>eventforge777@gmail.com</li>
+                        <li><i class="fas fa-map-marker-alt me-2"></i>12th, North Street, Madurai</li>
+                    </ul>
+                </div>
+
+                <!-- About -->
+                <div class="col-md-4">
+                    <h5 class="mb-3">About EventForge</h5>
+                    <p class="mb-3">EventForge is your premier destination for discovering, organizing, and managing events of all types.</p>
+                    <div class="social-links">
+                        <a href="#" class="me-3"><i class="fab fa-facebook fa-lg"></i></a>
+                        <a href="#" class="me-3"><i class="fab fa-twitter fa-lg"></i></a>
+                        <a href="#" class="me-3"><i class="fab fa-instagram fa-lg"></i></a>
+                        <a href="#" class="me-3"><i class="fab fa-linkedin fa-lg"></i></a>
                     </div>
                 </div>
-                <div class="col-md-4 mb-3">
-                    <h4>Contact Us</h4>
-                    <div class="footer-contact">
-                        <p><i class="fas fa-map-marker-alt"></i> 123 Event Street, Celebration City</p>
-                        <p><i class="fas fa-phone"></i> +1 (555) 123-4567</p>
-                        <p><i class="fas fa-envelope"></i> info@eventforge.com</p>
-                    </div>
-                </div>
-                <div class="col-md-4 mb-3">
-                    <h4>Quick Links</h4>
-                    <div class="footer-links">
-                        <a href="events.php"><i class="fas fa-calendar-alt"></i> Browse Events</a>
-                        <a href="organizer/login.php"><i class="fas fa-user-tie"></i> Organizer Portal</a>
-                        <a href="attendee/login.php"><i class="fas fa-user"></i> User Login</a>
-                        <a href="#"><i class="fas fa-question-circle"></i> Help & Support</a>
-                    </div>
+
+                <!-- Quick Links -->
+                <div class="col-md-4">
+                    <h5 class="mb-3">Quick Links</h5>
+                    <ul class="list-unstyled footer-links">
+                        <li><a href="events.php"><i class="fas fa-calendar-alt me-2"></i>Browse Events</a></li>
+                        <li><a href="organizer/login.php"><i class="fas fa-user-tie me-2"></i>Organizer Portal</a></li>
+                        <li><a href="attendee/login.php"><i class="fas fa-user me-2"></i>User Login</a></li>
+                        <li><a href="#"><i class="fas fa-question-circle me-2"></i>Help & Support</a></li>
+                    </ul>
                 </div>
             </div>
-        </div>
-        <div class="copyright mt-3">
-            <div class="container">
-                <p class="mb-0 text-center"> 2025 EventForge. All Rights Reserved.</p>
+            <hr class="my-4">
+            <div class="text-center">
+                <p class="mb-0">&copy; 2023 Event Forge. Created by Batch 7. All rights reserved.</p>
             </div>
         </div>
     </footer>
